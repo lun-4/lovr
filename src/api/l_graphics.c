@@ -1694,7 +1694,7 @@ static int l_lovrGraphicsNewSampler(lua_State* L) {
     info.wrap[2] = luax_checkenum(L, -1, WrapMode, NULL);
     lua_pop(L, 3);
   } else if (!lua_isnil(L, -1)) {
-    lovrThrow("Expected string or table for Sampler filter");
+    lovrThrow("Expected string or table for Sampler wrap");
   }
   lua_pop(L, 1);
 
