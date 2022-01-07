@@ -2047,7 +2047,7 @@ uint32_t lovrGraphicsLine(Material* material, uint32_t count, float** vertices) 
     .index.count = 2 * (count - 1)
   }, NULL);
 
-  for (uint32_t i = 0; i < count; i++) {
+  for (uint32_t i = 0; i < count - 1; i++) {
     indices[2 * i + 0] = i;
     indices[2 * i + 1] = i + 1;
   }
