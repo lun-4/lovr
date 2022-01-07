@@ -447,6 +447,7 @@ static gpu_pass* lookupPass(Canvas* canvas);
 static gpu_texture* getScratchTexture(uint32_t size[2], uint32_t layers, TextureFormat format, bool srgb, uint32_t samples);
 static uint32_t lookupLayout(gpu_slot* slots, uint32_t count);
 static uint32_t lookupMaterialBlock(MaterialFormat* format);
+static Texture* getDefaultTexture(void);
 static void updateModelTransforms(Model* model, uint32_t nodeIndex, float* parent);
 static void generateGeometry(void);
 static void clearState(gpu_pass* pass);
@@ -1452,7 +1453,7 @@ void lovrGraphicsSetShader(Shader* shader) {
           .extent = 4096
         };
       } else {
-        Texture* texture = lovrGraphicsGetDefaultTexture();
+        Texture* texture = getDefaultTexture();
         state.bindings[i].texture = texture->gpu;
       }
 
@@ -2648,26 +2649,6 @@ Texture* lovrGraphicsGetWindowTexture() {
   return state.window;
 }
 
-Texture* lovrGraphicsGetDefaultTexture() {
-  if (state.defaultTexture) return state.defaultTexture;
-  lovrGraphicsPrepare();
-  state.defaultTexture = lovrTextureCreate(&(TextureInfo) {
-    .type = TEXTURE_2D,
-    .usage = TEXTURE_SAMPLE | TEXTURE_COPY,
-    .format = FORMAT_RGBA8,
-    .width = 4,
-    .height = 4,
-    .depth = 1,
-    .mipmaps = 1,
-    .samples = 1,
-    .srgb = false,
-    .label = "white"
-  });
-  gpu_clear_texture(state.uploads->stream, state.defaultTexture->gpu, 0, 1, 0, 1, (float[4]) { 1.f, 1.f, 1.f, 1.f });
-  arr_push(&state.uploads->textures, (TextureAccess) { 0 }); // TODO maybe better way to ensure upload stream gets submitted
-  return state.defaultTexture;
-}
-
 Texture* lovrTextureCreate(TextureInfo* info) {
   lovrGraphicsPrepare();
 
@@ -3409,7 +3390,7 @@ Material* lovrMaterialCreate(MaterialInfo* info) {
       material->textures[i] = property->value.texture;
       lovrRetain(property->value.texture);
     } else {
-      bindings[i + 1].texture = lovrGraphicsGetDefaultTexture()->gpu;
+      bindings[i + 1].texture = getDefaultTexture()->gpu;
       material->textures[i] = NULL;
     }
   }
@@ -4740,6 +4721,27 @@ static uint32_t lookupMaterialBlock(MaterialFormat* format) {
   lovrAssert(gpu_bunch_init(block->bunch, &info), "Failed to initialize bunch for material block");
   lovrMaterialCreate(&(MaterialInfo) { .type = index }); // Default material is always first in block
   return index;
+}
+
+static Texture* getDefaultTexture() {
+  if (!state.defaultTexture) {
+    lovrGraphicsPrepare();
+    state.defaultTexture = lovrTextureCreate(&(TextureInfo) {
+      .type = TEXTURE_2D,
+      .usage = TEXTURE_SAMPLE | TEXTURE_COPY,
+      .format = FORMAT_RGBA8,
+      .width = 4,
+      .height = 4,
+      .depth = 1,
+      .mipmaps = 1,
+      .samples = 1,
+      .srgb = false,
+      .label = "white"
+    });
+    gpu_clear_texture(state.uploads->stream, state.defaultTexture->gpu, 0, 1, 0, 1, (float[4]) { 1.f, 1.f, 1.f, 1.f });
+    arr_push(&state.uploads->textures, (TextureAccess) { 0 }); // TODO maybe better way to ensure upload stream gets submitted
+  }
+  return state.defaultTexture;
 }
 
 // Refreshes global transforms of all model nodes

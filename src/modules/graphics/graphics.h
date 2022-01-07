@@ -439,7 +439,6 @@ typedef struct {
 } TextureInfo;
 
 Texture* lovrGraphicsGetWindowTexture(void);
-Texture* lovrGraphicsGetDefaultTexture(void);
 Texture* lovrTextureCreate(TextureInfo* info);
 Texture* lovrTextureCreateView(TextureViewInfo* view);
 void lovrTextureDestroy(void* ref);
