@@ -2887,7 +2887,7 @@ void lovrTextureWrite(Texture* texture, uint16_t offset[4], uint16_t extent[3], 
   state.stats.copies++;
 }
 
-void lovrTexturePaste(Texture* texture, Image* image, uint16_t srcOffset[2], uint16_t dstOffset[4], uint16_t extent[2]) {
+void lovrTexturePaste(Texture* texture, Image* image, uint16_t srcOffset[4], uint16_t dstOffset[4], uint16_t extent[4]) {
   lovrCheck(texture->info.format == image->format, "Texture and Image formats must match");
   lovrCheck(srcOffset[0] + extent[0] <= image->width, "Tried to read pixels past the width of the Image");
   lovrCheck(srcOffset[1] + extent[1] <= image->height, "Tried to read pixels past the height of the Image");
