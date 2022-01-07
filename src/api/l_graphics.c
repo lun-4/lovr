@@ -1239,7 +1239,7 @@ static int l_lovrGraphicsCone(lua_State* L) {
   float transform[16];
   index = luax_optmaterial(L, index, &material);
   index = luax_readmat4(L, index, transform, -2);
-  uint32_t detail = luaL_optinteger(L, index, 64);
+  uint32_t detail = luaL_optinteger(L, index, 4);
   uint32_t id = lovrGraphicsCone(material, transform, detail);
   lua_pushinteger(L, id);
   return 1;
@@ -1251,7 +1251,7 @@ static int l_lovrGraphicsCylinder(lua_State* L) {
   float transform[16];
   index = luax_optmaterial(L, index, &material);
   index = luax_readmat4(L, index, transform, -2);
-  uint32_t detail = luaL_optinteger(L, index++, 64);
+  uint32_t detail = luaL_optinteger(L, index++, 4);
   bool capped = lua_isnoneornil(L, index) ? true : lua_toboolean(L, index);
   uint32_t id = lovrGraphicsCylinder(material, transform, detail, capped);
   lua_pushinteger(L, id);
@@ -1264,7 +1264,7 @@ static int l_lovrGraphicsSphere(lua_State* L) {
   float transform[16];
   index = luax_optmaterial(L, index, &material);
   index = luax_readmat4(L, index, transform, 1);
-  uint32_t detail = luaL_optinteger(L, index, 64);
+  uint32_t detail = luaL_optinteger(L, index, 4);
   uint32_t id = lovrGraphicsSphere(material, transform, detail);
   lua_pushinteger(L, id);
   return 1;
