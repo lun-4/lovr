@@ -1297,17 +1297,17 @@ static int l_lovrGraphicsModel(lua_State* L) {
 }
 
 static int l_lovrGraphicsPrint(lua_State* L) {
+  int index = 1;
   size_t length;
   float transform[16];
-  Font* font = luax_checktype(L, 1, Font);
-  const char* text = luaL_checklstring(L, 2, &length);
-  int index = luax_readmat4(L, 3, transform, 1);
+  Font* font = lua_type(L, 1) == LUA_TUSERDATA ? luax_checktype(L, index++, Font) : NULL;
+  const char* text = luaL_checklstring(L, index++, &length);
+  index = luax_readmat4(L, index, transform, 1);
   float wrap = luax_optfloat(L, index++, 0.f);
   HorizontalAlign halign = luax_checkenum(L, index++, HorizontalAlign, "center");
   VerticalAlign valign = luax_checkenum(L, index++, VerticalAlign, "middle");
-  uint32_t id = lovrGraphicsPrint(font, text, length, transform, wrap, halign, valign);
-  lua_pushinteger(L, id);
-  return 1;
+  lovrGraphicsPrint(font, text, length, transform, wrap, halign, valign);
+  return 0;
 }
 
 static int l_lovrGraphicsReplay(lua_State* L) {
