@@ -518,8 +518,7 @@ const ShaderInfo* lovrShaderGetInfo(Shader* shader);
 
 typedef enum {
   MATERIAL_BASIC,
-  MATERIAL_PHYSICAL,
-  MATERIAL_CUBEMAP
+  MATERIAL_PHYSICAL
 } DefaultMaterial;
 
 typedef enum {

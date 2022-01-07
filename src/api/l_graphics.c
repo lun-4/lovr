@@ -72,7 +72,6 @@ StringEntry lovrDefaultAttribute[] = {
 StringEntry lovrDefaultMaterial[] = {
   [MATERIAL_BASIC] = ENTRY("basic"),
   [MATERIAL_PHYSICAL] = ENTRY("physical"),
-  [MATERIAL_CUBEMAP] = ENTRY("cubemap"),
   { 0 }
 };
 
