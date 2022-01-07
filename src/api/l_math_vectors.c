@@ -68,7 +68,7 @@ int luax_readscale(lua_State* L, int index, vec3 v, int components, const char* 
     case LUA_TNUMBER:
       if (components == 1) {
         v[0] = v[1] = v[2] = luax_tofloat(L, index++);
-      } else if (components == -2) {
+      } else if (components == -2) { // -2 is special and means "2 components: xy and z"
         v[0] = v[1] = luax_tofloat(L, index++);
         v[2] = luax_optfloat(L, index++, 1.f);
       } else {
