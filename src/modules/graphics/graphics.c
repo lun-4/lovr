@@ -3257,7 +3257,7 @@ Shader* lovrGraphicsGetDefaultShader(DefaultShader type) {
         .length = { sizeof(lovr_shader_pano_vert), sizeof(lovr_shader_pano_frag) },
         .label = "pano"
       });
-    default: lovrThrow("Unreachable");
+    default: lovrUnreachable();
   }
 }
 
@@ -3341,7 +3341,7 @@ Material* lovrMaterialCreate(MaterialInfo* info) {
           case FIELD_I32: *data.i32 = (int32_t) property->value.scalar; break;
           case FIELD_U32: *data.u32 = (uint32_t) property->value.scalar; break;
           case FIELD_F32: *data.f32 = (float) property->value.scalar; break;
-          default: lovrThrow("Unreachable");
+          default: lovrUnreachable();
         }
       } else if (vector) {
         if (property->type == PROPERTY_SCALAR && format->types[i] != FIELD_F32x2) {
@@ -3358,11 +3358,11 @@ Material* lovrMaterialCreate(MaterialInfo* info) {
             case FIELD_F32x2: memcpy(data.f32, property->value.vector, 2 * sizeof(float)); break;
             case FIELD_F32x3: memcpy(data.f32, property->value.vector, 3 * sizeof(float)); break;
             case FIELD_F32x4: memcpy(data.f32, property->value.vector, 4 * sizeof(float)); break;
-            default: lovrThrow("Unreachable");
+            default: lovrUnreachable();
           }
         }
       } else {
-        lovrThrow("Unreachable");
+        lovrUnreachable();
       }
     } else {
       if (scalar) {
@@ -3370,7 +3370,7 @@ Material* lovrMaterialCreate(MaterialInfo* info) {
           case FIELD_I32: *data.i32 = scale ? 1 : 0; break;
           case FIELD_U32: *data.u32 = scale ? 1u : 0u; break;
           case FIELD_F32: *data.f32 = scale ? 1.f : 0.f; break;
-          default: lovrThrow("Unreachable");
+          default: lovrUnreachable();
         }
       } else if (vector) {
         float zero[4] = { 0.f, 0.f, 0.f, 0.f };
@@ -3379,10 +3379,10 @@ Material* lovrMaterialCreate(MaterialInfo* info) {
           case FIELD_F32x2: memcpy(data.f32, (scale || color) ? ones : zero, 2 * sizeof(float)); break;
           case FIELD_F32x3: memcpy(data.f32, (scale || color) ? ones : zero, 3 * sizeof(float)); break;
           case FIELD_F32x4: memcpy(data.f32, (scale || color) ? ones : zero, 4 * sizeof(float)); break;
-          default: lovrThrow("Unreachable");
+          default: lovrUnreachable();
         }
       } else {
-        lovrThrow("Unreachable");
+        lovrUnreachable();
       }
     }
   }
@@ -5146,7 +5146,7 @@ static size_t measureTexture(TextureFormat format, uint16_t w, uint16_t h, uint1
     case FORMAT_ASTC_10x10: return ((w + 9) / 10) * ((h + 9) / 10) * d * 16;
     case FORMAT_ASTC_12x10: return ((w + 11) / 12) * ((h + 9) / 10) * d * 16;
     case FORMAT_ASTC_12x12: return ((w + 11) / 12) * ((h + 11) / 12) * d * 16;
-    default: lovrThrow("Unreachable");
+    default: lovrUnreachable();
   }
 }
 

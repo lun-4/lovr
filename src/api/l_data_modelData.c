@@ -397,7 +397,7 @@ static int l_lovrModelDataGetMeshIndex(lua_State* L) {
   switch (mesh->indices->type) {
     case U16: lua_pushinteger(L, data.u16[index]); return 1;
     case U32: lua_pushinteger(L, data.u32[index]); return 1;
-    default: lovrThrow("Unreachable");
+    default: lovrUnreachable();
   }
 }
 
@@ -427,7 +427,7 @@ static int l_lovrModelDataGetMaterialImage(lua_State* L) {
     case TEXTURE_ROUGHNESS: index = material->metalnessRoughnessTexture; break;
     case TEXTURE_OCCLUSION: index = material->occlusionTexture; break;
     case TEXTURE_NORMAL: index = material->normalTexture; break;
-    default: lovrThrow("Unreachable"); return 0;
+    default: lovrUnreachable(); return 0;
   }
   if (index == ~0u) {
     lua_pushnil(L);
@@ -454,7 +454,7 @@ static int l_lovrModelDataGetMaterialColor(lua_State* L) {
       lua_pushnumber(L, material->emissive[2]);
       lua_pushnumber(L, 1.f);
       return 4;
-    default: lovrThrow("Unreachable"); return 0;
+    default: lovrUnreachable(); return 0;
   }
 }
 
@@ -465,7 +465,7 @@ static int l_lovrModelDataGetMaterialValue(lua_State* L) {
   switch (type) {
     case SCALAR_METALNESS: lua_pushnumber(L, material->metalness); return 1;
     case SCALAR_ROUGHNESS: lua_pushnumber(L, material->roughness); return 1;
-    default: lovrThrow("Unreachable"); return 0;
+    default: lovrUnreachable(); return 0;
   }
 }
 

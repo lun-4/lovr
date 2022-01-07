@@ -110,7 +110,7 @@ static int luax_pushbufferfield(lua_State* L, void* data, FieldType type) {
       case FIELD_MAT2: lua_pushnumber(L, p.f32[c]); break;
       case FIELD_MAT3: lua_pushnumber(L, p.f32[c]); break;
       case FIELD_MAT4: lua_pushnumber(L, p.f32[c]); break;
-      default: lovrThrow("Unreachable");
+      default: lovrUnreachable();
     }
   }
   return components;
@@ -152,7 +152,7 @@ void luax_readbufferfield(lua_State* L, int index, int type, void* data) {
       case FIELD_F32x3: memcpy(data, v, 3 * sizeof(float)); break;
       case FIELD_F32x4: memcpy(data, v, 4 * sizeof(float)); break;
       case FIELD_MAT4: memcpy(data, v, 16 * sizeof(float)); break;
-      default: lovrThrow("Unreachable");
+      default: lovrUnreachable();
     }
   } else {
     for (int i = 0; i < fieldComponents[type]; i++) {
@@ -196,7 +196,7 @@ void luax_readbufferfield(lua_State* L, int index, int type, void* data) {
         case FIELD_MAT2: p.f32[i] = (float) x; break;
         case FIELD_MAT3: p.f32[i] = (float) x; break;
         case FIELD_MAT4: p.f32[i] = (float) x; break;
-        default: lovrThrow("Unreachable");
+        default: lovrUnreachable();
       }
     }
   }

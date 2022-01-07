@@ -102,7 +102,7 @@ void os_request_permission(os_permission permission) {
         break;
     }
 #else
-    lovrThrow("Unreachable");
+    lovrUnreachable();
 #endif
   }
 }
