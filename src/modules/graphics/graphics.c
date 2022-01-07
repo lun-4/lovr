@@ -3088,7 +3088,7 @@ static void lovrShaderInit(Shader* shader) {
 }
 
 Shader* lovrShaderCreate(ShaderInfo* info) {
-  Shader* shader = calloc(1, sizeof(Shader) + gpu_sizeof_shader() + gpu_sizeof_pipeline());
+  Shader* shader = calloc(1, sizeof(Shader) + gpu_sizeof_shader());
   lovrAssert(shader, "Out of memory");
   shader->gpu = (gpu_shader*) (shader + 1);
   shader->info = *info;
