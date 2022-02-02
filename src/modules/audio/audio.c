@@ -34,6 +34,7 @@ struct Source {
   uint8_t effects;
   bool playing;
   bool looping;
+  bool spatial;
 };
 
 static struct {
@@ -117,7 +118,7 @@ static void onPlayback(ma_device* device, void* out, const void* in, uint32_t co
       // - If EOF is reached, rewind and continue for looping sources, otherwise pad end with zero.
       buf = source->converter ? aux : raw;
       float* cursor = buf; // Edge of processed frames
-      uint32_t channelsOut = lovrSourceUsesSpatializer(source) ? 1 : 2; // If spatializer isn't converting to stereo, converter must do it
+      uint32_t channelsOut = source->spatial ? 1 : 2; // If spatializer isn't converting to stereo, converter must do it
       uint32_t framesRemaining = BUFFER_SIZE;
       while (framesRemaining > 0) {
         uint32_t framesRead;
@@ -158,7 +159,7 @@ static void onPlayback(ma_device* device, void* out, const void* in, uint32_t co
       }
 
       // Spatialize
-      if (lovrSourceUsesSpatializer(source)) {
+      if (source->spatial) {
         state.spatializer->apply(source, buf, mix, BUFFER_SIZE, BUFFER_SIZE);
         buf = mix;
       }
@@ -419,7 +420,7 @@ void lovrAudioSetAbsorption(float absorption[3]) {
 
 // Source
 
-Source* lovrSourceCreate(Sound* sound, uint32_t effects) {
+Source* lovrSourceCreate(Sound* sound, bool spatial, uint32_t effects) {
   lovrAssert(lovrSoundGetChannelLayout(sound) != CHANNEL_AMBISONIC, "Ambisonic Sources are not currently supported");
   Source* source = calloc(1, sizeof(Source));
   lovrAssert(source, "Out of memory");
@@ -429,14 +430,15 @@ Source* lovrSourceCreate(Sound* sound, uint32_t effects) {
   lovrRetain(source->sound);
 
   source->volume = 1.f;
-  source->effects = effects;
+  source->spatial = spatial;
+  source->effects = spatial ? effects : 0;
   quat_identity(source->orientation);
 
   ma_data_converter_config config = ma_data_converter_config_init_default();
   config.formatIn = miniaudioFormats[lovrSoundGetFormat(sound)];
   config.formatOut = miniaudioFormats[OUTPUT_FORMAT];
   config.channelsIn = lovrSoundGetChannelCount(sound);
-  config.channelsOut = lovrSourceUsesSpatializer(source) ? 1 : 2; // See onPlayback
+  config.channelsOut = spatial ? 1 : 2;
   config.sampleRateIn = lovrSoundGetSampleRate(sound);
   config.sampleRateOut = state.sampleRate;
 
@@ -458,6 +460,7 @@ Source* lovrSourceClone(Source* source) {
   clone->sound = source->sound;
   lovrRetain(clone->sound);
   clone->volume = source->volume;
+  clone->spatial = source->spatial;
   memcpy(clone->position, source->position, 4 * sizeof(float));
   memcpy(clone->orientation, source->orientation, 4 * sizeof(float));
   clone->radius = source->radius;
@@ -555,8 +558,8 @@ double lovrSourceGetDuration(Source* source, TimeUnit units) {
   return units == UNIT_SECONDS ? (double) frames / lovrSoundGetSampleRate(source->sound) : frames;
 }
 
-bool lovrSourceUsesSpatializer(Source* source) {
-  return source->effects != EFFECT_NONE; // Currently, all effects require the spatializer
+bool lovrSourceIsSpatial(Source* source) {
+  return source->spatial;
 }
 
 void lovrSourceGetPose(Source* source, float position[4], float orientation[4]) {
@@ -590,11 +593,11 @@ void lovrSourceSetDirectivity(Source* source, float weight, float power) {
 }
 
 bool lovrSourceIsEffectEnabled(Source* source, Effect effect) {
-  return source->effects == EFFECT_NONE ? false : (source->effects & (1 << effect));
+  return source->effects & -source->spatial & (1 << effect);
 }
 
 void lovrSourceSetEffectEnabled(Source* source, Effect effect, bool enabled) {
-  lovrCheck(source->effects != EFFECT_NONE, "Unable to change effects on a Source with effects disabled");
+  lovrCheck(source->spatial, "Sources must be created with the spatial flag to use effects");
   if (enabled) {
     source->effects |= (1 << effect);
   } else {
