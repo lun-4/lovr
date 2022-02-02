@@ -119,7 +119,6 @@ static void onPlayback(ma_device* device, void* out, const void* in, uint32_t co
       float* cursor = buf; // Edge of processed frames
       uint32_t channelsOut = lovrSourceUsesSpatializer(source) ? 1 : 2; // If spatializer isn't converting to stereo, converter must do it
       uint32_t framesRemaining = BUFFER_SIZE;
-      uint32_t framesProcessed = 0;
       while (framesRemaining > 0) {
         uint32_t framesRead;
 
@@ -151,11 +150,9 @@ static void onPlayback(ma_device* device, void* out, const void* in, uint32_t co
           ma_uint64 framesOut = framesRemaining;
           ma_data_converter_process_pcm_frames(source->converter, raw, &framesIn, cursor, &framesOut);
           cursor += framesOut * channelsOut;
-          framesProcessed += framesOut;
           framesRemaining -= framesOut;
         } else {
           cursor += framesRead * channelsOut;
-          framesProcessed += framesRead;
           framesRemaining -= framesRead;
         }
       }
