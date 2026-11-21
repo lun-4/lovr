@@ -2,6 +2,12 @@
 #include "headset/openvr_input.h"
 #include <math.h>
 
+#ifdef _WIN32
+static const char* manifestPath = "C:\\installed\\actions.json";
+#else
+static const char* manifestPath = "/installed/actions.json";
+#endif
+
 static struct {
   unsigned calls, failAt, zeroAt, updates, reads, failRead, haptics;
   bool valid, active, connected, invalidPose, down, changed;
@@ -17,7 +23,7 @@ static EVRInputError step(void) {
 }
 
 static EVRInputError OPENVR_FNTABLE_CALLTYPE manifest(char* path) {
-  fake.valid &= fake.calls == 0 && strcmp(path, "/installed/actions.json") == 0;
+  fake.valid &= fake.calls == 0 && strcmp(path, manifestPath) == 0;
   return step();
 }
 
@@ -120,15 +126,19 @@ static bool initialization(void) {
     resetFake();
     fake.failAt = failure;
     memset(&input, 0xff, sizeof(input));
-    CHECK(lovrOpenVRInputInit(&input, &api, "/installed/actions.json") == EVRInputError_VRInputError_NameNotFound);
+    CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == EVRInputError_VRInputError_NameNotFound);
     OpenVRInput empty = { 0 };
     CHECK(memcmp(&input, &empty, sizeof(input)) == 0);
     CHECK(fake.calls == failure && fake.valid && fake.updates == 0);
   }
   resetFake();
   CHECK(lovrOpenVRInputInit(&input, &api, "relative.json") == EVRInputError_VRInputError_InvalidParam);
+#ifdef _WIN32
+  CHECK(lovrOpenVRInputInit(&input, &api, "C:actions.json") == EVRInputError_VRInputError_InvalidParam);
+  CHECK(lovrOpenVRInputInit(&input, &api, "/actions.json") == EVRInputError_VRInputError_InvalidParam);
+#endif
   CHECK(fake.calls == 0);
-  CHECK(lovrOpenVRInputInit(&input, &api, "/installed/actions.json") == 0);
+  CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == 0);
   CHECK(fake.valid && fake.calls == 4 + OPENVR_INPUT_ACTION_COUNT);
   CHECK(strcmp(lovrOpenVRInputActionPath(0), "/actions/lovr/in/grip_pose") == 0);
   CHECK(strcmp(lovrOpenVRInputActionPath(1), "/actions/lovr/in/aim_pose") == 0);
@@ -137,11 +147,11 @@ static bool initialization(void) {
   CHECK(lovrOpenVRInputActionPath(OPENVR_INPUT_ACTION_COUNT) == NULL);
   resetFake();
   fake.zeroAt = 3;
-  CHECK(lovrOpenVRInputInit(&input, &api, "/installed/actions.json") == EVRInputError_VRInputError_InvalidHandle);
+  CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == EVRInputError_VRInputError_InvalidHandle);
   CHECK(input.api == NULL && input.actionSet == 0 && input.actions[0] == 0);
   struct VR_IVRInput_FnTable incomplete = api;
   incomplete.GetAnalogActionData = NULL;
-  CHECK(lovrOpenVRInputInit(&input, &incomplete, "/installed/actions.json") == EVRInputError_VRInputError_InvalidParam);
+  CHECK(lovrOpenVRInputInit(&input, &incomplete, manifestPath) == EVRInputError_VRInputError_InvalidParam);
   lovrOpenVRInputReset(&input);
   CHECK(lovrOpenVRInputUpdate(&input, ETrackingUniverseOrigin_TrackingUniverseStanding, .02f) == EVRInputError_VRInputError_InvalidHandle);
   return true;
@@ -150,7 +160,7 @@ static bool initialization(void) {
 static bool snapshots(void) {
   resetFake();
   OpenVRInput input;
-  CHECK(lovrOpenVRInputInit(&input, &api, "/installed/actions.json") == 0);
+  CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == 0);
   bool down, changed, touched;
   float axis[2], p[3], q[4], v[3], w[3];
   fake.down = fake.changed = true;
@@ -213,7 +223,7 @@ static bool snapshots(void) {
 static bool scalarAxes(void) {
   resetFake();
   OpenVRInput input;
-  CHECK(lovrOpenVRInputInit(&input, &api, "/installed/actions.json") == 0);
+  CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == 0);
   CHECK(lovrOpenVRInputUpdate(&input, ETrackingUniverseOrigin_TrackingUniverseStanding, .02f) == 0);
   DeviceAxis scalar[] = { AXIS_TRIGGER, AXIS_GRIP, AXIS_NIB, AXIS_THUMBREST, MAX_AXES, (DeviceAxis) -1 };
   for (unsigned i = 0; i < sizeof(scalar) / sizeof(scalar[0]); i++) {
@@ -235,7 +245,7 @@ static bool scalarAxes(void) {
 static bool malformedTracking(void) {
   resetFake();
   OpenVRInput input;
-  CHECK(lovrOpenVRInputInit(&input, &api, "/installed/actions.json") == 0);
+  CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == 0);
   CHECK(lovrOpenVRInputUpdate(&input, ETrackingUniverseOrigin_TrackingUniverseStanding, .02f) == 0);
   InputPoseActionData_t valid = input.hands[0].poses[0];
   for (unsigned kind = 0; kind < 5; kind++) {
@@ -266,7 +276,7 @@ static bool malformedTracking(void) {
 static bool haptics(void) {
   resetFake();
   OpenVRInput input;
-  CHECK(lovrOpenVRInputInit(&input, &api, "/installed/actions.json") == 0);
+  CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == 0);
   CHECK(lovrOpenVRInputVibrate(&input, DEVICE_HAND_RIGHT, .4f, .25f, 120.f) == 0);
   CHECK(fake.valid && fake.haptic == 200 + OPENVR_INPUT_ACTION_COUNT - 1 && fake.restriction == 301);
   CHECK(fake.strength == .4f && fake.duration == .25f && fake.frequency == 120.f);

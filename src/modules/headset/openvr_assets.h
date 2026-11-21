@@ -54,6 +54,14 @@ typedef struct {
   char manifest[OPENVR_ASSET_PATH_CAPACITY];
 } OpenVRAssetsResult;
 
+static inline size_t lovrOpenVRAssetPathRootLength(const char* path) {
+#ifdef _WIN32
+  if (((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z')) &&
+      path[1] == ':' && (path[2] == '/' || path[2] == '\\')) return 3;
+#endif
+  return path[0] == '/' ? 1 : 0;
+}
+
 const char* lovrOpenVRAssetName(size_t index);
 OpenVRAssetsResult lovrOpenVRAssetsResolve(bool shared, const OpenVRAssetsProvider* provider);
 

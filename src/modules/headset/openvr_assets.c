@@ -241,14 +241,6 @@ static OpenVRAssetsStatus validate(const OpenVRAssetsProvider* provider, const c
   return metadata.readable ? status : OPENVR_ASSETS_NOT_READABLE;
 }
 
-static size_t pathRootLength(const char* path) {
-#ifdef _WIN32
-  if (((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z')) &&
-      path[1] == ':' && path[2] == '/') return 3;
-#endif
-  return path[0] == '/' ? 1 : 0;
-}
-
 OpenVRAssetsResult lovrOpenVRAssetsResolve(bool shared, const OpenVRAssetsProvider* provider) {
   const OpenVRAssetsProvider native = { NULL, artifact, canonicalize, inspect };
   bool useNative = !provider;
@@ -262,14 +254,14 @@ OpenVRAssetsResult lovrOpenVRAssetsResolve(bool shared, const OpenVRAssetsProvid
   if (result.status != OPENVR_ASSETS_OK_PATHS_NOT_PINNED) return result;
   if (!memchr(source, 0, sizeof(source))) { result.status = OPENVR_ASSETS_PATH_TOO_LONG; return result; }
   strcpy(result.failingPath, source);
-  if (!pathRootLength(source)) {
+  if (!lovrOpenVRAssetPathRootLength(source)) {
     result.status = OPENVR_ASSETS_RELATIVE_ARTIFACT_UNSUPPORTED;
     return result;
   }
   result.status = provider->canonicalize(provider->context, source, path, sizeof(path), &result.osError);
   if (result.status != OPENVR_ASSETS_OK_PATHS_NOT_PINNED) return result;
   if (!memchr(path, 0, sizeof(path))) { result.status = OPENVR_ASSETS_PATH_TOO_LONG; return result; }
-  size_t root = pathRootLength(path);
+  size_t root = lovrOpenVRAssetPathRootLength(path);
   if (!root || strstr(path, "/../") || strstr(path, "/./") || strstr(path, "//")) {
     result.status = OPENVR_ASSETS_INVALID_PATH;
     return result;

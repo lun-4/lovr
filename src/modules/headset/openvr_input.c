@@ -1,4 +1,5 @@
 #include "openvr_input.h"
+#include "openvr_assets.h"
 #include "core/maf.h"
 #include <math.h>
 #include <string.h>
@@ -58,10 +59,21 @@ const char* lovrOpenVRInputActionPath(uint32_t index) {
   return index < OPENVR_INPUT_ACTION_COUNT ? paths[index] : NULL;
 }
 
+static bool absoluteManifestPath(const char* path) {
+  if (!path) return false;
+  size_t root = lovrOpenVRAssetPathRootLength(path);
+#ifdef _WIN32
+  // A leading separator alone still depends on the process's current drive.
+  return root == 3 && path[root];
+#else
+  return root && path[root];
+#endif
+}
+
 EVRInputError lovrOpenVRInputInit(OpenVRInput* input, struct VR_IVRInput_FnTable* api, const char* manifestPath) {
   if (!input) return EVRInputError_VRInputError_InvalidParam;
   lovrOpenVRInputReset(input);
-  if (!api || !manifestPath || manifestPath[0] != '/' || !manifestPath[1] ||
+  if (!api || !absoluteManifestPath(manifestPath) ||
       !api->SetActionManifestPath || !api->GetActionSetHandle || !api->GetActionHandle ||
       !api->GetInputSourceHandle || !api->UpdateActionState || !api->GetDigitalActionData ||
       !api->GetAnalogActionData || !api->GetPoseActionDataRelativeToNow || !api->TriggerHapticVibrationAction) {
