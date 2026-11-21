@@ -2,7 +2,7 @@
 #define LOVR_OPENVR_INPUT_H
 
 #include "headset.h"
-#include <openvr_capi.h>
+#include "openvr_api.h"
 
 #define OPENVR_INPUT_BUTTON_COUNT 11
 #define OPENVR_INPUT_AXIS_COUNT 4

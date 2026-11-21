@@ -9,7 +9,11 @@
 #include "headset/openvr_events.h"
 #include "headset/openvr_haptics.h"
 #include "event/event.h"
+#ifdef _WIN32
+#include <process.h>
+#else
 #include <unistd.h>
+#endif
 #include "headset/openvr_overlay.h"
 #include "headset/openvr_vulkan.h"
 #include "headset/openvr_frame.h"
@@ -387,7 +391,7 @@ static bool connect(void) {
     lovrOpenVRInputReset(&state.input);
     state.inputReady = false;
     lovrOpenVRDisconnect(&state.runtime);
-    lovrSetError("openvr: action assets status %d at %s (errno %d)", assets.status, assets.failingPath, assets.osError);
+    lovrSetError("openvr: action assets status %d at %s (OS error %d)", assets.status, assets.failingPath, assets.osError);
     return false;
   }
   EVRInitError error = lovrOpenVRConnect(&state.runtime, NULL);
@@ -703,7 +707,12 @@ static bool pollEvents(void) {
   for (Layer* layer = state.all; layer; layer = layer->next)
     if (layer->panel.handle) handles[count++] = layer->panel.handle;
   OpenVREventEffects effects;
-  lovrOpenVREventsUpdate(&state.events, &state.runtime, state.inputReady, (uint32_t) getpid(), handles, count, &effects);
+#ifdef _WIN32
+  uint32_t pid = (uint32_t) _getpid();
+#else
+  uint32_t pid = (uint32_t) getpid();
+#endif
+  lovrOpenVREventsUpdate(&state.events, &state.runtime, state.inputReady, pid, handles, count, &effects);
   pushEventTransitions(&effects);
   if (!state.events.inputFocus) clearInteraction();
   bool ok = true;
