@@ -54,6 +54,7 @@ option(LOVR_BUILD_BUNDLE "On macOS, build a .app bundle instead of a raw program
 option(LOVR_BUILD_WITH_SYMBOLS "Build with C function symbols exposed" OFF)
 
 set(LOVR_PROJECT "${PROJECT_SOURCE_DIR}/etc/nogame" CACHE STRING "The project folder to fuse to the build")
+set(LOVR_EMBEDDED_ANALYSIS_SOURCE "" CACHE FILEPATH "Optional source using Luau analysis inside the LÖVR library")
 
 # Setup
 if(EMSCRIPTEN)
@@ -568,13 +569,13 @@ if(LOVR_USE_LUAU AND LOVR_EXPORT_LUA_SYMBOLS)
   # drops the archive members that define them and the exports go with them;
   # `--undefined=` forces each member in, and the default visibility
   # (`ENABLE_EXPORTS`) exports it.
-  target_link_options(lovr PRIVATE
-    "-Wl,--undefined=lua_error"
-    "-Wl,--undefined=lua_getmetatablepointer"
-    "-Wl,--undefined=lua_gcdump"
-    "-Wl,--undefined=luarequire_pushproxyrequire"
-    "-Wl,--undefined=lua_vm_is_topframe"
-  )
+  foreach(symbol lua_error lua_getmetatablepointer lua_gcdump luarequire_pushproxyrequire lua_vm_is_topframe)
+    if(MSVC)
+      target_link_options(lovr PRIVATE "/INCLUDE:${symbol}")
+    else()
+      target_link_options(lovr PRIVATE "LINKER:--undefined=${symbol}")
+    endif()
+  endforeach()
 endif()
 
 set(LOVR_LUAU_WHOLE_ARCHIVES)
@@ -597,8 +598,21 @@ if(LOVR_USE_LUAU AND LOVR_LUAU_ANALYSIS)
 endif()
 
 if(LOVR_LUAU_WHOLE_ARCHIVES)
-  # One group keeps CMake option de-duplication from stripping repeated archive delimiters.
-  target_link_options(lovr PRIVATE "-Wl,--whole-archive" ${LOVR_LUAU_WHOLE_ARCHIVES} "-Wl,--no-whole-archive")
+  if(MSVC)
+    foreach(archive IN LISTS LOVR_LUAU_WHOLE_ARCHIVES)
+      target_link_options(lovr PRIVATE "/WHOLEARCHIVE:${archive}")
+    endforeach()
+  else()
+    # One group keeps CMake option de-duplication from stripping repeated archive delimiters.
+    target_link_options(lovr PRIVATE "-Wl,--whole-archive" ${LOVR_LUAU_WHOLE_ARCHIVES} "-Wl,--no-whole-archive")
+  endif()
+endif()
+
+if(LOVR_EMBEDDED_ANALYSIS_SOURCE)
+  if(NOT LOVR_USE_LUAU OR NOT LOVR_LUAU_ANALYSIS)
+    message(FATAL_ERROR "Embedding an analysis source requires Luau analysis")
+  endif()
+  target_sources(lovr PRIVATE "${LOVR_EMBEDDED_ANALYSIS_SOURCE}")
 endif()
 
 if(LOVR_SANITIZE)
