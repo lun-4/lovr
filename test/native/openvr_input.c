@@ -10,11 +10,11 @@ static const char* manifestPath = "/installed/actions.json";
 
 static struct {
   unsigned calls, failAt, zeroAt, updates, reads, failRead, haptics;
-  bool valid, active, connected, invalidPose, down, changed;
+  bool valid, active, connected, invalidPose, down, changed, analogOnly;
   EVRInputError updateError, readError, hapticError;
   VRActionHandle_t haptic;
   VRInputValueHandle_t restriction;
-  float strength, duration, frequency;
+  float strength, duration, frequency, axis;
 } fake;
 
 static EVRInputError step(void) {
@@ -81,7 +81,7 @@ static EVRInputError OPENVR_FNTABLE_CALLTYPE digital(VRActionHandle_t handle, In
     uint32_t size, VRInputValueHandle_t restriction) {
   readCheck(handle, restriction, 2, 2 * OPENVR_INPUT_BUTTON_COUNT);
   fake.valid &= size == sizeof(*data);
-  data->bActive = fake.active;
+  data->bActive = fake.active && !fake.analogOnly;
   data->bState = fake.down;
   data->bChanged = fake.changed;
   return fake.failRead && fake.reads == fake.failRead ? EVRInputError_VRInputError_IPCError : fake.readError;
@@ -92,7 +92,7 @@ static EVRInputError OPENVR_FNTABLE_CALLTYPE analog(VRActionHandle_t handle, Inp
   readCheck(handle, restriction, 2 + 2 * OPENVR_INPUT_BUTTON_COUNT, OPENVR_INPUT_AXIS_COUNT);
   fake.valid &= size == sizeof(*data);
   data->bActive = fake.active;
-  data->x = .7f;
+  data->x = fake.axis;
   data->y = -.3f;
   return fake.failRead && fake.reads == fake.failRead ? EVRInputError_VRInputError_IPCError : fake.readError;
 }
@@ -118,6 +118,7 @@ static struct VR_IVRInput_FnTable api = {
 static void resetFake(void) {
   memset(&fake, 0, sizeof(fake));
   fake.valid = fake.active = fake.connected = true;
+  fake.axis = .7f;
 }
 
 static bool initialization(void) {
@@ -273,6 +274,43 @@ static bool malformedTracking(void) {
   return true;
 }
 
+static bool analogButtons(void) {
+  resetFake();
+  OpenVRInput input;
+  CHECK(lovrOpenVRInputInit(&input, &api, manifestPath) == 0);
+  Device hand = DEVICE_HAND_LEFT_POINT;
+  ETrackingUniverseOrigin origin = ETrackingUniverseOrigin_TrackingUniverseStanding;
+  bool down, changed;
+  fake.analogOnly = true;
+  fake.axis = .76f;
+  CHECK(lovrOpenVRInputUpdate(&input, origin, .02f) == 0);
+  CHECK(lovrOpenVRInputIsDown(&input, hand, BUTTON_TRIGGER, &down, &changed) && down && changed);
+  CHECK(lovrOpenVRInputIsDown(&input, hand, BUTTON_GRIP, &down, &changed) && !down && !changed);
+  CHECK(!lovrOpenVRInputIsDown(&input, hand, BUTTON_THUMBSTICK, &down, &changed));
+  fake.axis = .72f;
+  CHECK(lovrOpenVRInputUpdate(&input, origin, .02f) == 0);
+  CHECK(lovrOpenVRInputIsDown(&input, hand, BUTTON_TRIGGER, &down, &changed) && down && !changed);
+  fake.axis = .69f;
+  CHECK(lovrOpenVRInputUpdate(&input, origin, .02f) == 0);
+  CHECK(lovrOpenVRInputIsDown(&input, hand, BUTTON_TRIGGER, &down, &changed) && !down && changed);
+  fake.axis = 1.f;
+  fake.analogOnly = false;
+  CHECK(lovrOpenVRInputUpdate(&input, origin, .02f) == 0);
+  CHECK(lovrOpenVRInputIsDown(&input, hand, BUTTON_TRIGGER, &down, &changed) && !down && !changed);
+  fake.analogOnly = true;
+  CHECK(lovrOpenVRInputUpdate(&input, origin, .02f) == 0);
+  CHECK(lovrOpenVRInputIsDown(&input, hand, BUTTON_GRIP, &down, &changed) && down && changed);
+  lovrOpenVRInputClearButtons(&input);
+  fake.axis = .72f;
+  CHECK(lovrOpenVRInputUpdate(&input, origin, .02f) == 0);
+  CHECK(lovrOpenVRInputIsDown(&input, hand, BUTTON_GRIP, &down, &changed) && !down && !changed);
+  fake.axis = NAN;
+  CHECK(lovrOpenVRInputUpdate(&input, origin, .02f) == 0);
+  CHECK(!lovrOpenVRInputIsDown(&input, hand, BUTTON_TRIGGER, &down, &changed));
+  CHECK(fake.valid);
+  return true;
+}
+
 static bool haptics(void) {
   resetFake();
   OpenVRInput input;
@@ -297,6 +335,7 @@ int main(int argc, char** argv) {
     { "openvr.input.initialization", initialization },
     { "openvr.input.action-snapshot-transitions", snapshots },
     { "openvr.input.scalar-axis-canary", scalarAxes },
+    { "openvr.input.analog-buttons", analogButtons },
     { "openvr.input.malformed-tracking", malformedTracking },
     { "openvr.input.haptic-action-routing", haptics }
   };
